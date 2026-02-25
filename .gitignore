@@ -11,3 +11,4 @@ tests/reports/
 *.tmp
 *.cache
 *.log
+.env

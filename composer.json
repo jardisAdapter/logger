@@ -1,53 +1,54 @@
 {
-  "name": "jardisadapter/logger",
-  "description": "PSR-3 Logger for PHP 8.2+ - Simple Start, Enterprise Scale, Domain-Driven Design",
-  "type": "library",
-  "license": "PolyForm-Noncommercial-1.0.0",
-  "minimum-stability": "stable",
-  "prefer-stable": true,
-  "authors": [
-    {
-      "name": "Jardis Development",
-      "email": "jardisDev@headgent.com"
-    }
-  ],
-  "require": {
-    "php": ">=8.2",
-    "psr/container": "^2.0",
-    "psr/log": "^3.0",
-    "ext-json": "*",
-    "ext-pdo": "*",
-    "ext-redis": "*",
-    "jardissupport/dotenv": "^1.0",
-    "ext-amqp": "*",
-    "ext-rdkafka": "*"
-  },
-  "require-dev": {
-    "phpunit/phpunit": "^10.5",
-    "phpstan/phpstan": "^2.0.4",
-    "squizlabs/php_codesniffer": "^3.11.2"
-  },
-  "autoload": {
-    "psr-4": {
-      "JardisAdapter\\Logger\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "JardisAdapter\\Logger\\Tests\\": "tests/"
-    }
-  },
-  "scripts": {
-    "post-install-cmd": [
-      "echo '#!/usr/bin/env bash' > .git/hooks/pre-commit",
-      "echo 'bash ./support/pre-commit-hook.sh' >> .git/hooks/pre-commit",
-      "chmod +x .git/hooks/pre-commit"
+    "name": "jardisadapter/logger",
+    "description": "PSR-3 Logger for PHP 8.2+ - Simple Start, Enterprise Scale, Domain-Driven Design",
+    "type": "library",
+    "license": "PolyForm-Noncommercial-1.0.0",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Jardis Development",
+            "email": "jardisDev@headgent.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "psr/container": "^2.0",
+        "psr/log": "^3.0",
+        "ext-json": "*",
+        "ext-pdo": "*",
+        "ext-redis": "*",
+        "jardissupport/dotenv": "^1.0",
+        "ext-amqp": "*",
+        "ext-rdkafka": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "phpstan/phpstan": "^2.0.4",
+        "squizlabs/php_codesniffer": "^3.11.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "JardisAdapter\\Logger\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "JardisAdapter\\Logger\\Tests\\": "tests/"
+        }
+    },
+    "homepage": "https://github.com/jardisAdapter/logger",
+    "support": {
+        "issues": "https://github.com/jardisAdapter/logger/issues",
+        "email": "jardisDev@headgent.com"
+    },
+    "keywords": [
+        "logger",
+        "log formatter",
+        "domain driven design",
+        "DDD",
+        "jardis",
+        "psr-3",
+        "logging"
     ]
-  },
-  "homepage": "https://github.com/jardisAdapter/logger",
-  "support": {
-    "issues": "https://github.com/jardisAdapter/logger/issues",
-    "email": "jardisDev@headgent.com"
-  },
-  "keywords": ["logger", "log formatter", "domain driven design", "DDD", "jardis", "psr-3", "logging"]
 }

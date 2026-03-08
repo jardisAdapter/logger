@@ -17,10 +17,12 @@
         "psr/log": "^3.0",
         "ext-json": "*",
         "ext-pdo": "*",
-        "ext-redis": "*",
-        "jardissupport/dotenv": "^1.0",
-        "ext-amqp": "*",
-        "ext-rdkafka": "*"
+        "jardissupport/dotenv": "^1.0"
+    },
+    "suggest": {
+        "ext-redis": "Required for Redis log handler (LogRedis, LogRedisMq)",
+        "ext-amqp": "Required for RabbitMQ log handler (LogRabbitMq)",
+        "ext-rdkafka": "Required for Kafka log handler (LogKafkaMq)"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5",

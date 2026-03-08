@@ -118,18 +118,20 @@ trait LoggerBuilderTrait
 
     /**
      * Adds a Redis handler.
+     *
+     * @param string $logLevel
+     * @param \Redis $redis Connected Redis instance (caller manages connection lifecycle)
+     * @param string|null $name
+     * @param int $ttl Time-to-live for log entries in seconds
+     * @return self
      */
     public function addRedis(
         string $logLevel,
-        string $host = 'localhost',
-        int $port = 6379,
+        \Redis $redis,
         ?string $name = null,
-        float $timeout = 2.5,
-        ?string $password = null,
-        int $database = 0,
         int $ttl = 3600
     ): self {
-        $handler = new Handler\LogRedis($logLevel, $host, $port, $timeout, $password, $database, $ttl);
+        $handler = new Handler\LogRedis($logLevel, $redis, $ttl);
         $this->configureHandler($handler, $name);
         return $this;
     }

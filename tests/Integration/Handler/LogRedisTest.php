@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace JardisAdapter\Logger\Tests\Integration\Handler;
 
 use JardisAdapter\Logger\Handler\LogRedis;
@@ -10,39 +12,28 @@ use Redis;
 
 class LogRedisTest extends TestCase
 {
-    private string $redisHost;
-    private int $redisPort;
-    private ?string $redisPassword;
     private ?Redis $redis = null;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Load from ENV or use defaults
-        // Note: Inside Docker network, we always use internal port 6379
-        $this->redisHost = getenv('REDIS_HOST') ?: 'redis';
-        $this->redisPort = 6379; // Always use internal port inside Docker network
-        $this->redisPassword = getenv('REDIS_PASSWORD') ?: null;
+        $host = getenv('REDIS_HOST') ?: 'redis';
+        $port = 6379;
+        $password = getenv('REDIS_PASSWORD') ?: null;
 
-        // Create Redis connection for cleanup
         $this->redis = new Redis();
         try {
-            echo "\nTrying to connect to {$this->redisHost}:{$this->redisPort}...\n";
-
-            if (!$this->redis->connect($this->redisHost, $this->redisPort, 2.5)) {
-                $this->markTestSkipped("Redis server not available at {$this->redisHost}:{$this->redisPort}");
+            if (!$this->redis->connect($host, $port, 2.5)) {
+                $this->markTestSkipped("Redis server not available at {$host}:{$port}");
             }
 
-            if ($this->redisPassword) {
-                $this->redis->auth($this->redisPassword);
+            if ($password) {
+                $this->redis->auth($password);
             }
 
-            // Flush test database
-            $this->redis->select(1); // Use database 1 for tests
+            $this->redis->select(1);
             $this->redis->flushDB();
-
-            echo "Redis connected successfully!\n";
         } catch (\Exception $e) {
             $this->markTestSkipped('Redis server not available: ' . $e->getMessage());
         }
@@ -60,23 +51,11 @@ class LogRedisTest extends TestCase
     public function testLogToRedis(): void
     {
         $logger = new Logger('TestContext');
-
-        $redisHandler = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: $this->redisHost,
-            port: $this->redisPort,
-            password: $this->redisPassword,
-            database: 1,
-            ttl: 300
-        );
-
-        $logger->addHandler($redisHandler);
+        $logger->addHandler(new LogRedis(LogLevel::INFO, $this->redis, ttl: 300));
         $logger->info('Test message', ['key' => 'value', 'number' => 42]);
 
-        // Give Redis a moment to process
-        usleep(100000); // 100ms
+        usleep(100000);
 
-        // Verify data was written to Redis
         $keys = $this->redis->keys('Redis*');
         $this->assertGreaterThan(0, count($keys), 'Should have at least one key in Redis');
 
@@ -94,17 +73,7 @@ class LogRedisTest extends TestCase
     public function testLogWithTTL(): void
     {
         $logger = new Logger('TestContext');
-
-        $redisHandler = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: $this->redisHost,
-            port: $this->redisPort,
-            password: $this->redisPassword,
-            database: 1,
-            ttl: 2 // 2 seconds
-        );
-
-        $logger->addHandler($redisHandler);
+        $logger->addHandler(new LogRedis(LogLevel::INFO, $this->redis, ttl: 2));
         $logger->info('TTL test message');
 
         usleep(100000);
@@ -122,19 +91,8 @@ class LogRedisTest extends TestCase
     public function testMultipleLogsToRedis(): void
     {
         $logger = new Logger('TestContext');
+        $logger->addHandler(new LogRedis(LogLevel::DEBUG, $this->redis, ttl: 300));
 
-        $redisHandler = new LogRedis(
-            logLevel: LogLevel::DEBUG,
-            host: $this->redisHost,
-            port: $this->redisPort,
-            password: $this->redisPassword,
-            database: 1,
-            ttl: 300
-        );
-
-        $logger->addHandler($redisHandler);
-
-        // Log multiple messages
         $logger->debug('Debug message');
         $logger->info('Info message');
         $logger->warning('Warning message');
@@ -149,17 +107,7 @@ class LogRedisTest extends TestCase
     public function testLogWithDifferentDataTypes(): void
     {
         $logger = new Logger('TestContext');
-
-        $redisHandler = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: $this->redisHost,
-            port: $this->redisPort,
-            password: $this->redisPassword,
-            database: 1,
-            ttl: 300
-        );
-
-        $logger->addHandler($redisHandler);
+        $logger->addHandler(new LogRedis(LogLevel::INFO, $this->redis, ttl: 300));
 
         $complexData = [
             'string' => 'test',
@@ -187,70 +135,10 @@ class LogRedisTest extends TestCase
         }
     }
 
-    public function testConnectionWithPassword(): void
+    public function testGetRedisReturnsSameInstance(): void
     {
-        if (!$this->redisPassword) {
-            $this->markTestSkipped('No Redis password configured');
-        }
+        $handler = new LogRedis(LogLevel::INFO, $this->redis, ttl: 300);
 
-        $logger = new Logger('TestContext');
-
-        $redisHandler = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: $this->redisHost,
-            port: $this->redisPort,
-            password: $this->redisPassword,
-            database: 1
-        );
-
-        $logger->addHandler($redisHandler);
-        $logger->info('Password auth test');
-
-        usleep(100000);
-
-        $keys = $this->redis->keys('Redis*');
-        $this->assertGreaterThan(0, count($keys));
-    }
-
-    public function testLazyConnectionNotEstablishedUntilLog(): void
-    {
-        $redisHandler = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: $this->redisHost,
-            port: $this->redisPort,
-            database: 1
-        );
-
-        // Connection should not be established yet
-        $this->assertNull($redisHandler->getRedis());
-
-        // Now trigger a log
-        $logger = new Logger('TestContext');
-        $logger->addHandler($redisHandler);
-        $logger->info('First log');
-
-        usleep(50000);
-
-        // Now connection should be established
-        $this->assertInstanceOf(Redis::class, $redisHandler->getRedis());
-    }
-
-    public function testConnectionFailureHandledGracefully(): void
-    {
-        $logger = new Logger('TestContext');
-
-        $redisHandler = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: 'non-existent-host',
-            port: 9999,
-            timeout: 0.5
-        );
-
-        $logger->addHandler($redisHandler);
-
-        // Should not throw exception
-        $logger->info('This should fail gracefully');
-
-        $this->assertTrue(true); // Test passes if no exception thrown
+        $this->assertSame($this->redis, $handler->getRedis());
     }
 }

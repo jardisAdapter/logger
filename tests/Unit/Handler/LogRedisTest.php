@@ -7,63 +7,45 @@ namespace JardisAdapter\Logger\Tests\Unit\Handler;
 use JardisAdapter\Logger\Handler\LogRedis;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
+use Redis;
 
 class LogRedisTest extends TestCase
 {
+    private function createRedisMock(): Redis
+    {
+        $redis = $this->createMock(Redis::class);
+        return $redis;
+    }
+
     public function testConstructorWithDefaults(): void
     {
-        $logRedis = new LogRedis(LogLevel::INFO);
+        $logRedis = new LogRedis(LogLevel::INFO, $this->createRedisMock());
 
         $this->assertInstanceOf(LogRedis::class, $logRedis);
     }
 
-    public function testConstructorWithCustomParameters(): void
+    public function testConstructorWithCustomTtl(): void
     {
         $logRedis = new LogRedis(
             logLevel: LogLevel::ERROR,
-            host: 'redis-server',
-            port: 6380,
-            timeout: 5.0,
-            password: 'secret',
-            database: 1,
+            redis: $this->createRedisMock(),
             ttl: 7200
         );
 
         $this->assertInstanceOf(LogRedis::class, $logRedis);
     }
 
-    public function testLazyConnection(): void
+    public function testGetRedisReturnsSameInstance(): void
     {
-        // Create handler but don't log yet
-        $logRedis = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: 'non-existent-host',
-            port: 9999
-        );
+        $redis = $this->createRedisMock();
+        $logRedis = new LogRedis(LogLevel::INFO, $redis);
 
-        // Connection should not have been attempted yet
-        $this->assertNull($logRedis->getRedis());
-    }
-
-    public function testConnectionFailureDoesNotThrow(): void
-    {
-        $logRedis = new LogRedis(
-            logLevel: LogLevel::INFO,
-            host: 'invalid-host',
-            port: 9999,
-            timeout: 0.1
-        );
-
-        // This should not throw, just return false
-        $result = $logRedis(LogLevel::INFO, 'Test message', ['key' => 'value']);
-
-        // Result will be false or empty string depending on implementation
-        $this->assertTrue(true); // Test passes if no exception thrown
+        $this->assertSame($redis, $logRedis->getRedis());
     }
 
     public function testEncodeJsonSuccess(): void
     {
-        $logRedis = new class('info') extends LogRedis {
+        $logRedis = new class(LogLevel::INFO, new Redis()) extends LogRedis {
             public function testEncode($value): string
             {
                 return $this->encode($value);
@@ -82,7 +64,7 @@ class LogRedisTest extends TestCase
 
     public function testEncodeFallbackToSerialization(): void
     {
-        $logRedis = new class('info') extends LogRedis {
+        $logRedis = new class(LogLevel::INFO, new Redis()) extends LogRedis {
             public function testEncode($value): string
             {
                 return $this->encode($value);

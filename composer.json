@@ -1,0 +1,58 @@
+{
+    "name": "jardisadapter/logger",
+    "homepage": "https://docs.jardis.io/en/adapter/logger",
+    "description": "PSR-3 logging pipeline with 20+ handlers, 7 formatters, 6 enrichers, and fluent builder API",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Jardis Development",
+            "email": "jardisDev@headgent.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "psr/container": "^2.0",
+        "psr/log": "^3.0",
+        "ext-pdo": "*",
+        "jardissupport/dotenv": "^1.0"
+    },
+    "suggest": {
+        "ext-redis": "Required for Redis log handler (LogRedis, LogRedisMq)",
+        "ext-amqp": "Required for RabbitMQ log handler (LogRabbitMq)",
+        "ext-rdkafka": "Required for Kafka log handler (LogKafkaMq)"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "phpstan/phpstan": "^2.0.4",
+        "squizlabs/php_codesniffer": "^3.11.2",
+        "ext-json": "*",
+        "ext-redis": "*",
+        "ext-amqp": "*",
+        "ext-rdkafka": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "JardisAdapter\\Logger\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "JardisAdapter\\Logger\\Tests\\": "tests/"
+        }
+    },    "support": {
+        "issues": "https://github.com/jardisAdapter/logger/issues",
+        "email": "jardisDev@headgent.com"
+    },
+    "keywords": [
+        "logger",
+        "log formatter",
+        "domain driven design",
+        "DDD",
+        "jardis",
+        "psr-3",
+        "logging"
+    ]
+}

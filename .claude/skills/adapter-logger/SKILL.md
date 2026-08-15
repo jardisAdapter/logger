@@ -13,9 +13,7 @@ next: []
 
 ## ARCHITECTURE
 - `LoggerBuilder` → configures handlers → `getLogger()` → **immutable** `Logger` (PSR-3)
-- `LogCommand` — base class for all handlers (implements `StreamableLogCommandInterface`)
 - `LogData` (`Data\LogData`) — builds log records; `addField()` = root level, `addExtra()` = inside `data`
-- `HttpTransport` — shared HTTP delivery for `LogWebhook`, `LogSlack`, `LogTeams`, `LogLoki`
 - Enrichers = plain callables with `__invoke()` — no interface required
 
 ## API / SIGNATURES

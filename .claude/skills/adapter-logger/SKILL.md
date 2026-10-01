@@ -4,7 +4,7 @@ description: PSR-3 Logger with fluent builder, multi-handler, enrichers, smart h
 user-invocable: false
 zone: post-active
 persona: C
-prerequisites: [rules-architecture, rules-patterns]
+prerequisites: [foundation-architecture, foundation-patterns]
 next: []
 ---
 

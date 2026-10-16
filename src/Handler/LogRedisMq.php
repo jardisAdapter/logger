@@ -7,6 +7,7 @@ namespace JardisAdapter\Logger\Handler;
 use JardisAdapter\Logger\Contract\LogFormatInterface;
 use JardisAdapter\Logger\Contract\StreamableLogCommandInterface;
 use JardisAdapter\Logger\Formatter\LogJsonFormat;
+use Closure;
 use Exception;
 use Redis;
 
@@ -25,10 +26,17 @@ use Redis;
  * $redis->connect('localhost', 6379);
  * $logger->addHandler(new LogRedisMq($redis, 'logs'));
  * ```
+ *
+ * The first argument is either a ready Redis handle or a provider `Closure(): Redis`.
+ * A provider is invoked lazily on the first publish and its result is reused afterwards;
+ * construction never calls it. An exception thrown by the provider is not swallowed
+ * by the handler's silent failure, it reaches the caller unchanged (and the provider is
+ * called again on the next access).
  */
 class LogRedisMq implements StreamableLogCommandInterface
 {
-    private Redis $redis;
+    /** @var Redis|Closure(): Redis */
+    private Redis|Closure $redis;
     private string $channel;
     private string $context = '';
     private ?LogFormatInterface $format = null;
@@ -36,11 +44,11 @@ class LogRedisMq implements StreamableLogCommandInterface
     private ?string $handlerName = null;
 
     /**
-     * @param Redis $redis Connected Redis instance
+     * @param Redis|Closure(): Redis $redis Connected Redis instance or lazy provider
      * @param string $channel Redis Pub/Sub channel name
      * @throws Exception If Redis instance is not valid
      */
-    public function __construct(Redis $redis, string $channel)
+    public function __construct(Redis|Closure $redis, string $channel)
     {
         $this->redis = $redis;
         $this->channel = $channel;
@@ -57,6 +65,9 @@ class LogRedisMq implements StreamableLogCommandInterface
 
     public function __invoke(string $level, string $message, ?array $data = []): ?string
     {
+        // Resolved outside the silent-failure block: provider errors reach the caller unchanged.
+        $redis = $this->getRedis();
+
         try {
             $logData = [
                 'context' => $this->context,
@@ -67,7 +78,7 @@ class LogRedisMq implements StreamableLogCommandInterface
             ];
 
             $formattedMessage = $this->format()($logData);
-            $this->publish($formattedMessage);
+            $this->publish($redis, $formattedMessage);
 
             return $formattedMessage;
         } catch (Exception $e) {
@@ -79,13 +90,27 @@ class LogRedisMq implements StreamableLogCommandInterface
     /**
      * @throws Exception
      */
-    private function publish(string $message): void
+    private function publish(Redis $redis, string $message): void
     {
-        $result = $this->redis->publish($this->channel, $message);
+        $result = $redis->publish($this->channel, $message);
 
         if ($result === false) {
             throw new Exception('Failed to publish to Redis channel');
         }
+    }
+
+    /**
+     * Get the Redis connection (resolves a lazy provider once, memoized on success).
+     */
+    public function getRedis(): Redis
+    {
+        $redis = $this->redis;
+        if ($redis instanceof Closure) {
+            $redis = $redis();
+            $this->redis = $redis;
+        }
+
+        return $redis;
     }
 
     public function setContext(string $context): self

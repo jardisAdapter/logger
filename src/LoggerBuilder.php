@@ -167,14 +167,15 @@ class LoggerBuilder
      * Adds a Redis handler.
      *
      * @param string $logLevel
-     * @param \Redis $redis Connected Redis instance (caller manages connection lifecycle)
+     * @param \Redis|\Closure(): \Redis $redis Connected Redis instance (caller manages connection
+     *                                          lifecycle) or lazy provider, invoked on the first log write
      * @param string|null $name
      * @param int $ttl Time-to-live for log entries in seconds
      * @return self
      */
     public function addRedis(
         string $logLevel,
-        \Redis $redis,
+        \Redis|\Closure $redis,
         ?string $name = null,
         int $ttl = 3600
     ): self {
@@ -361,9 +362,12 @@ class LoggerBuilder
 
     /**
      * Adds a Redis Pub/Sub handler.
+     *
+     * @param \Redis|\Closure(): \Redis $redis Connected Redis instance or lazy provider,
+     *                                          invoked on the first publish
      */
     public function addRedisMq(
-        \Redis $redis,
+        \Redis|\Closure $redis,
         string $channel,
         ?string $name = null
     ): self {

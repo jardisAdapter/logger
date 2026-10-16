@@ -37,11 +37,11 @@ new LoggerBuilder(string $context)
 ->addStash(string $level, string $host, int $port, ?array $bindTo = null, ?string $name = null)
 
 // Storage (injected connections)
-->addRedis(string $level, Redis $redis, ?string $name = null, int $ttl = 3600)
+->addRedis(string $level, Redis|Closure $redis, ?string $name = null, int $ttl = 3600)
 ->addDatabase(string $level, PDO $pdo, ?string $table = null, ?string $name = null)
 
 // Queue (injected connections)
-->addRedisMq(Redis $redis, string $channel, ?string $name = null)
+->addRedisMq(Redis|Closure $redis, string $channel, ?string $name = null)
 ->addRabbitMq(AMQPConnection $connection, string $exchange, ?string $name = null)
 ->addKafkaMq(Producer $producer, string $topic, ?string $name = null)
 
@@ -98,6 +98,8 @@ $handler->logData()
 | Smart | `LogFingersCrossed`, `LogSampling`, `LogConditional`, `LogNull` |
 
 External connections always injected (DIP) — never created internally.
+
+**Lazy Redis provider:** `LogRedis`, `LogRedisMq`, `addRedis()` and `addRedisMq()` take `Redis|Closure` (`Closure(): Redis`). Building the handler/logger never calls the provider; the first log write (or `getRedis()`) calls it once and memoizes the result on success. A provider exception is not swallowed by the handler (through `Logger` it reaches `setErrorHandler()`); a ready `Redis` handle stays valid. All other handlers (HTTP/Webhook/Slack/Teams/Loki, Stash, Email, Syslog) open nothing at construction.
 
 ## SMART HANDLERS
 ```php

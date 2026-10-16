@@ -49,6 +49,21 @@ $logger->info('Order created', ['order_id' => 4711]);
 $logger->error('Payment failed', ['order_id' => 4711, 'reason' => 'Card declined']);
 ```
 
+## Lazy Redis Connections
+
+`LogRedis`, `LogRedisMq` and the builder methods `addRedis()` / `addRedisMq()` accept either a ready `Redis` handle or a provider `Closure(): Redis`. The provider is **not** called when the handler or logger is built; it runs on the first log write (or `getRedis()`), exactly once — the result is reused afterwards. Exceptions thrown by the provider are not swallowed by the handler; they reach the caller of the handler unchanged on that first access (through `Logger`, they go to the error handler set via `setErrorHandler()`).
+
+```php
+$logger = (new LoggerBuilder('app'))
+    ->addRedis(LogLevel::INFO, function (): Redis {
+        $redis = new Redis();
+        $redis->connect('127.0.0.1', 6379);
+        return $redis;
+    })
+    ->addRedisMq(fn(): Redis => $connectRedis(), 'logs')
+    ->getLogger();   // nothing opened yet
+```
+
 ## Advanced Usage
 
 ```php
